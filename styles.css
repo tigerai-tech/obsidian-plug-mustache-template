@@ -1,0 +1,78 @@
+/*
+
+This CSS file will be included with your plugin, and
+available in the app when your plugin is enabled.
+
+If your plugin does not need CSS, delete this file.
+
+*/
+
+/* 设置通用文本颜色 */
+.theme-light {
+    --text-normal: #202020;
+}
+
+/* 设置左侧功能区背景 */
+.theme-dark .side-dock-ribbon-action {
+    color: var(--text-normal);
+}
+
+/* 模板设置文本区域 */
+.template-setting textarea {
+    min-height: 200px;
+    font-family: monospace;
+}
+
+/* 模板管理器样式 */
+.template-item {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 5px;
+    margin-bottom: 10px !important;
+    padding: 10px !important;
+}
+
+.template-item .setting-item-control {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.template-item input {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+/* 模板编辑器样式 */
+.template-edit-modal {
+    width: 100% !important;
+    max-width: 1000px !important;
+}
+
+.template-edit-modal .modal-content {
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.template-edit-modal textarea {
+    width: 100%;
+    min-height: 200px;
+    font-family: monospace;
+    margin-bottom: 15px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 8px;
+}
+
+/* 参数输入模态窗口样式 */
+.template-parameter-modal {
+    width: 80% !important;
+    max-width: 800px !important;
+}
+
+/* 模板选择模态窗口样式 */
+.template-selection-modal {
+    width: 80% !important;
+    max-width: 800px !important;
+}
