@@ -1,5 +1,33 @@
 # Mustache Template Formatter
 
+
+## DEMO 演示
+
+1. Copy main.js, manifest.json, styles.css these three files to the notes project.obsidian/plugins/mustache-template-inserter directory, if this directory does not exist, create one.    
+复制main.js, manifest.json, styles.css这三个文件到笔记项目.obsidian/plugins/mustache-template-inserter 目录下，没有这个目录就创建一个。
+2. Open Obsidian settings and enable it under the third-party plugins option.  
+打开Obsidian设置，在第三方插件选项下启用Template Inserter  
+![img.png](./docs/step1.png)
+3. Select Template Insert, choose to add or modify templates  
+选中Template Insert，选择添加或修改模板
+![img.png](docs/step2.png)
+4. Edit one template
+- selectedText represents the text selected in the editor  
+- Template syntax uses Mustache  
+
+修改模板, 
+- selectedText代表在编辑器中选中的文本
+- 模板语法使用Mustache
+![img.png](docs/step3.png)
+5. Save and exit the Obsidian app, then reopen it.  
+保存并退出Obsidian应用，重新打开。
+6. Use Template / 使用模板
+- 选中目标文本
+![img.png](target-text.png)
+- command+p 打开命令窗口，选择 Template Insterter: 你的模板，填写参数值，模板生效，替换原文本
+![img.png](docs/img.png)
+![img_1.png](docs/img_1.png)
+![img_2.png](docs/img_2.png)
 ## Description:
 The **Mustache Template Formatter** plugin allows users to format selected text using the Mustache templating engine and insert the formatted result into the current document. With simple templates and data mapping, users can dynamically generate content, improving text editing efficiency and flexibility. This plugin is particularly useful for users who need to process or automate the insertion of formatted text, such as generating repetitive document structures, form generation, or code comments in programming.
 
