@@ -157,16 +157,27 @@ export default class TemplatePlugin extends Plugin {
 						// 没选中文本时，使用模板设置的selectedText默认值
 						const selectedText = editor.getSelection() || template.defaultValues?.selectedText || '';
 						const cursorPosition = editor.getCursor();
-
+						
 						// 如果模板有参数，打开参数输入模态窗口
 						if (template.params && template.params.length > 0) {
+							// 预设参数值
+							const initialParamValues: Record<string, string> = {};
+							// 为所有参数设置默认值
+							template.params.forEach(param => {
+								if (param === 'selectedText') {
+									initialParamValues[param] = selectedText;
+								} else {
+									initialParamValues[param] = template.defaultValues?.[param] || '';
+								}
+							});
+
 							new TemplateParameterModal(this.app, template, selectedText, (result) => {
 								if (editor.getSelection()) {
 									editor.replaceSelection(result);
 								} else {
 									editor.replaceRange(result, cursorPosition);
 								}
-							}).open();
+							}, initialParamValues).open();
 						} else {
 							// 无参数模板，直接渲染并插入
 							try {
@@ -195,7 +206,7 @@ export default class TemplatePlugin extends Plugin {
 			this.app.workspace.on('editor-menu', (menu, editor) => {
 				// 获取被标记为命令的模板
 				const commandTemplates = this.settings.templates.filter(t => t.isCommand);
-
+				
 				if (commandTemplates.length > 0) {
 					// 创建子菜单
 					menu.addItem((item) => {
@@ -206,7 +217,7 @@ export default class TemplatePlugin extends Plugin {
 								// 主菜单项点击时，打开模板选择窗口
 								const selectedText = editor.getSelection() || '';
 								const cursorPosition = editor.getCursor();
-
+						
 								new TemplateSelectionModal(this.app, this.settings.templates, selectedText, (result) => {
 									if (editor.getSelection()) {
 										editor.replaceSelection(result);
@@ -216,7 +227,7 @@ export default class TemplatePlugin extends Plugin {
 								}).open();
 							});
 					});
-
+					
 					// 为每个被标记为命令的模板创建子菜单项
 					commandTemplates.forEach(template => {
 						menu.addItem((item) => {
@@ -226,16 +237,27 @@ export default class TemplatePlugin extends Plugin {
 									// 没选中文本时，使用模板设置的selectedText默认值
 									const selectedText = editor.getSelection() || template.defaultValues?.selectedText || '';
 									const cursorPosition = editor.getCursor();
-
+									
 									// 如果模板有参数，打开参数输入模态窗口
 									if (template.params && template.params.length > 0) {
+										// 预设参数值
+										const initialParamValues: Record<string, string> = {};
+										// 为所有参数设置默认值
+										template.params.forEach(param => {
+											if (param === 'selectedText') {
+												initialParamValues[param] = selectedText;
+											} else {
+												initialParamValues[param] = template.defaultValues?.[param] || '';
+											}
+										});
+										
 										new TemplateParameterModal(this.app, template, selectedText, (result) => {
 											if (editor.getSelection()) {
 												editor.replaceSelection(result);
 											} else {
 												editor.replaceRange(result, cursorPosition);
 											}
-										}).open();
+										}, initialParamValues).open();
 									} else {
 										// 无参数模板，直接渲染并插入
 										try {
@@ -291,13 +313,25 @@ class TemplateSelectionModal extends Modal {
 						if (template.params && template.params.length > 0) {
 							// 如果没有选中文本，使用模板设置的默认值
 							const effectiveSelectedText = this.selectedText || template.defaultValues?.selectedText || '';
-
+							
+							// 预设参数值
+							const initialParamValues: Record<string, string> = {};
+							// 为所有参数设置默认值
+							template.params.forEach(param => {
+								if (param === 'selectedText') {
+									initialParamValues[param] = effectiveSelectedText;
+								} else {
+									initialParamValues[param] = template.defaultValues?.[param] || '';
+								}
+							});
+							
 							// 有参数的模板，打开参数输入窗口
 							new TemplateParameterModal(
 								this.app,
 								template,
 								effectiveSelectedText,
-								this.onSubmit
+								this.onSubmit,
+								initialParamValues
 							).open();
 						} else {
 							// 无参数模板，直接渲染并插入
@@ -330,19 +364,23 @@ class TemplateParameterModal extends Modal {
 	paramValues: Record<string, string> = {}; // 用于存储参数值的对象
 	paramInputs: Record<string, TextComponent> = {}; // 存储参数输入组件
 
-	constructor(app: App, template: Template, selectedText: string, onSubmit: (result: string) => void) {
+	constructor(app: App, template: Template, selectedText: string, onSubmit: (result: string) => void, initialParamValues?: Record<string, string>) {
 		super(app);
 		this.template = template;
 		this.selectedText = selectedText;
 		this.onSubmit = onSubmit;
 		
-		// 初始化参数值为默认值或空字符串
+		// 初始化参数值 - 优先级: 传入的初始值 > selectedText > 默认值 > 空字符串
 		if (this.template.params) {
 			this.template.params.forEach(param => {
-				// 如果已经有选中文本，且参数是selectedText，则使用选中文本
-				if (param === 'selectedText' && selectedText) {
+				if (initialParamValues && initialParamValues[param] !== undefined) {
+					// 使用传入的初始值
+					this.paramValues[param] = initialParamValues[param];
+				} else if (param === 'selectedText' && selectedText) {
+					// 如果已经有选中文本，且参数是selectedText，则使用选中文本
 					this.paramValues[param] = selectedText;
 				} else {
+					// 否则使用默认值或空字符串
 					this.paramValues[param] = this.template.defaultValues?.[param] || '';
 				}
 			});
@@ -378,11 +416,12 @@ class TemplateParameterModal extends Modal {
 
 			paramSetting.addText(text => {
 				this.paramInputs[param] = text;
-				// 设置默认值
-				const defaultValue = this.template.defaultValues?.[param] || '';
-				text.setValue(defaultValue)
+				// 设置当前值（如果已经在paramValues中设置过）或默认值
+				const currentValue = this.paramValues[param] || this.template.defaultValues?.[param] || '';
+				text.setValue(currentValue)
 					.setPlaceholder(`Enter ${param}`)
 					.onChange(value => {
+						// 实时更新参数值
 						this.paramValues[param] = value;
 					});
 			});
@@ -394,6 +433,14 @@ class TemplateParameterModal extends Modal {
 				.setButtonText('Insert Template')
 				.setCta()
 				.onClick(() => {
+					// 确保在点击时获取所有最新的输入值
+					if (this.template.params) {
+						this.template.params.forEach(param => {
+							if (this.paramInputs[param]) {
+								this.paramValues[param] = this.paramInputs[param].getValue();
+							}
+						});
+					}
 					this.processTemplate();
 				}));
 				
@@ -408,11 +455,30 @@ class TemplateParameterModal extends Modal {
 
 	processTemplate() {
 		try {
-			// 创建包含所有参数值的对象，并添加selectedText
+			// 再次确保所有输入框的值都被保存到paramValues中
+			if (this.template.params) {
+				this.template.params.forEach(param => {
+					if (this.paramInputs[param]) {
+						this.paramValues[param] = this.paramInputs[param].getValue();
+					}
+				});
+			}
+			
+			// 创建包含所有参数值的对象
 			const templateData: Record<string, any> = {
-				...this.paramValues,
-				selectedText: this.selectedText
+				...this.paramValues
 			};
+			
+			// 确保selectedText总是可用
+			if (!templateData.selectedText) {
+				templateData.selectedText = this.selectedText;
+			}
+			
+			// 记录日志以便调试
+			console.log('Template parameters:', this.template.params);
+			console.log('Template default values:', this.template.defaultValues);
+			console.log('Template input values:', this.paramValues);
+			console.log('Final template data:', templateData);
 			
 			// 简化的模板渲染
 			// 不再尝试处理复杂的条件逻辑，使用基本的Mustache替换功能
@@ -420,6 +486,7 @@ class TemplateParameterModal extends Modal {
 			
 			try {
 				renderedTemplate = Mustache.render(this.template.content, templateData);
+				console.log('Rendered template:', renderedTemplate); // 记录渲染后的模板
 			} catch (renderError) {
 				console.error('Mustache render error:', renderError);
 				
@@ -435,8 +502,10 @@ class TemplateParameterModal extends Modal {
 				
 				// 移除所有条件块，处理多行情况
 				renderedTemplate = renderedTemplate.replace(/\{\{#.*?\}\}[\s\S]*?\{\{\/.*?\}\}/g, '');
+				console.log('Fallback rendered template:', renderedTemplate); // 记录降级渲染后的模板
 			}
 			
+			// 确保渲染后提交结果并关闭窗口
 			this.onSubmit(renderedTemplate);
 			this.close();
 		} catch (error) {
